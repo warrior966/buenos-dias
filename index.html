@@ -1,643 +1,133 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aventura de plataformas</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor Web Simple</title>
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #151d30;
+            --bg-input: #1e293b;
+            --accent: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --text: #f8fafc;
+            --text-muted: #64748b;
+        }
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg-main); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Pantalla de Login Inicial */
+        #login-screen { position: fixed; inset: 0; background: var(--bg-main); display: flex; justify-content: center; align-items: center; z-index: 100; transition: opacity 0.3s ease; }
+        .box { background: var(--bg-card); padding: 2.5rem; border-radius: 16px; width: 100%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); border: 1px solid #24324d; }
+        .box h2 { margin-bottom: 1.5rem; text-align: center; color: var(--accent); font-weight: 600; }
+        
+        input { width: 100%; padding: 0.85rem 1rem; margin-bottom: 1.25rem; border-radius: 8px; border: 1px solid #334155; background: var(--bg-input); color: white; font-size: 0.95rem; transition: 0.2s; }
+        input:focus { outline: none; border-color: var(--accent); }
+        
+        button { width: 100%; padding: 0.85rem; border-radius: 8px; background: var(--accent); cursor: pointer; font-weight: 600; color: var(--bg-main); border: none; transition: 0.2s; font-size: 0.95rem; }
+        button:hover { background: var(--accent-hover); transform: translateY(-1px); }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      background: #172554;
-      color: white;
-      font-family: system-ui, sans-serif;
-    }
+        /* Barra de Navegación Superior Flotante */
+        header { 
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%) translateY(-120px);
+            width: 90%; max-width: 850px; background: rgba(21, 29, 48, 0.95); backdrop-filter: blur(12px);
+            padding: 0.6rem 1.2rem; display: flex; gap: 1rem; align-items: center; 
+            border-radius: 30px; border: 1px solid rgba(255,255,255,0.08); z-index: 80;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        header.show { transform: translateX(-50%) translateY(0); }
+        header h1 { font-size: 0.95rem; color: var(--accent); font-weight: 600; white-space: nowrap; }
 
-    h1 {
-      margin: 0;
-      font-size: clamp(1.4rem, 4vw, 2rem);
-    }
+        .nav-input-group { flex: 1; display: flex; gap: 0.5rem; align-items: center; }
+        header input { margin-bottom: 0; padding: 0.5rem 0.8rem; font-size: 0.85rem; border-radius: 20px; }
+        header button { width: auto; padding: 0.5rem 1.2rem; font-size: 0.85rem; border-radius: 20px; }
 
-    p {
-      margin: 0;
-      text-align: center;
-    }
+        /* Botón Ojo Flotante */
+        #toggle-nav-btn {
+            display: none; position: fixed; top: 15px; left: 15px; width: 45px; height: 45px;
+            background: var(--bg-card); border: 1px solid #24324d; border-radius: 50%;
+            cursor: pointer; z-index: 85; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); color: var(--text-muted); transition: 0.2s;
+        }
+        #toggle-nav-btn:hover { color: var(--accent); background: var(--bg-input); transform: scale(1.05); }
 
-    .marco {
-      width: min(960px, 100%);
-      overflow: hidden;
-      border: 4px solid white;
-      border-radius: 12px;
-      background: #7dd3fc;
-      box-shadow: 0 12px 30px #0005;
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
-
-    .controles-movil {
-      display: flex;
-      justify-content: space-between;
-      width: min(960px, 100%);
-      user-select: none;
-      touch-action: none;
-    }
-
-    .grupo-controles {
-      display: flex;
-      gap: 10px;
-    }
-
-    .boton-control {
-      width: 68px;
-      height: 58px;
-      border: 2px solid white;
-      border-radius: 14px;
-      background: #2563eb;
-      color: white;
-      font-size: 1.5rem;
-      font-weight: bold;
-      touch-action: none;
-    }
-
-    .boton-control:active {
-      background: #1d4ed8;
-      transform: scale(0.96);
-    }
-
-    .nota {
-      max-width: 960px;
-      color: #dbeafe;
-      font-size: 0.9rem;
-    }
-  </style>
+        #main-content { flex: 1; display: flex; position: relative; background: #fff; height: 100%; }
+        iframe { width: 100%; height: 100%; border: none; background: #ffffff; }
+    </style>
 </head>
-
 <body>
-  <h1>La aventura de las plataformas</h1>
-  <p>¡Recoge monedas, esquiva al enemigo y llega a la bandera!</p>
 
-  <div class="marco">
-    <canvas id="juego" width="960" height="540"></canvas>
-  </div>
+    <button id="toggle-nav-btn" onclick="toggleNav()" title="Mostrar/Ocultar barra">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+    </button>
 
-  <div class="controles-movil">
-    <div class="grupo-controles">
-      <button class="boton-control" id="izquierda" aria-label="Mover a la izquierda">◀</button>
-      <button class="boton-control" id="derecha" aria-label="Mover a la derecha">▶</button>
+    <div id="login-screen">
+        <div class="box">
+            <h2>Visor Web Dinámico</h2>
+            <input type="text" id="nickname-input" placeholder="Tu Apodo o Nickname" required>
+            <input type="text" id="url-input" placeholder="Web a cargar (ej: wikipedia.org)" required>
+            <button id="submit-btn" onclick="connect()">Cargar Web</button>
+        </div>
     </div>
-    <button class="boton-control" id="saltar" aria-label="Saltar">⬆</button>
-  </div>
 
-  <p class="nota">
-    Teclado: ← → o A D para moverte; Espacio, ↑ o W para saltar. Pulsa R para reiniciar.
-  </p>
+    <header id="floating-nav">
+        <h1 id="user-display">Visor</h1>
+        <div class="nav-input-group">
+            <input type="text" id="nav-url-input" placeholder="Cambiar URL...">
+            <button onclick="changeUrlFromNav()">Ir</button>
+        </div>
+    </header>
 
-  <script>
-    const canvas = document.querySelector("#juego");
-    const ctx = canvas.getContext("2d");
+    <div style="display: flex; flex: 1; height: 100%;">
+        <div id="main-content">
+            <iframe id="web-frame" src="about:blank"></iframe>
+        </div>
+    </div>
 
-    const ANCHO = canvas.width;
-    const ALTO = canvas.height;
-    const ANCHO_MUNDO = 2600;
-    const SUELO_Y = 490;
+    <script>
+        let navVisible = false;
+        let userNickname = "";
 
-    const teclas = {
-      izquierda: false,
-      derecha: false
-    };
+        function connect() {
+            userNickname = document.getElementById('nickname-input').value.trim();
+            let url = document.getElementById('url-input').value.trim();
 
-    let saltoSolicitado = false;
-    let camaraX = 0;
-    let monedas = [];
-    let enemigo;
-    let jugador;
-    let victoria = false;
-    let finDelJuego = false;
-    let ultimoTiempo = 0;
-
-    const plataformas = [
-      { x: 0,    y: SUELO_Y, w: ANCHO_MUNDO, h: 100 },
-      { x: 250,  y: 400, w: 120, h: 20 },
-      { x: 440,  y: 345, w: 130, h: 20 },
-      { x: 650,  y: 420, w: 110, h: 20 },
-      { x: 835,  y: 360, w: 140, h: 20 },
-      { x: 1150, y: 405, w: 150, h: 20 },
-      { x: 1410, y: 335, w: 150, h: 20 },
-      { x: 1660, y: 405, w: 140, h: 20 },
-      { x: 1900, y: 350, w: 150, h: 20 },
-      { x: 2170, y: 405, w: 150, h: 20 }
-    ];
-
-    function reiniciar() {
-      jugador = {
-        x: 70,
-        y: SUELO_Y - 48,
-        w: 34,
-        h: 48,
-        vx: 0,
-        vy: 0,
-        velocidad: 310,
-        fuerzaSalto: 680,
-        enSuelo: false,
-        vidas: 3,
-        monedas: 0
-      };
-
-      monedas = [
-        { x: 290, y: 365, recogida: false },
-        { x: 480, y: 310, recogida: false },
-        { x: 700, y: 380, recogida: false },
-        { x: 875, y: 325, recogida: false },
-        { x: 1050, y: 440, recogida: false },
-        { x: 1200, y: 370, recogida: false },
-        { x: 1460, y: 300, recogida: false },
-        { x: 1720, y: 370, recogida: false },
-        { x: 1950, y: 315, recogida: false },
-        { x: 2220, y: 370, recogida: false }
-      ];
-
-      enemigo = {
-        x: 1010,
-        y: SUELO_Y - 32,
-        w: 38,
-        h: 32,
-        velocidad: 90,
-        direccion: 1,
-        limiteIzquierdo: 970,
-        limiteDerecho: 1120,
-        vivo: true
-      };
-
-      camaraX = 0;
-      victoria = false;
-      finDelJuego = false;
-      saltoSolicitado = false;
-    }
-
-    function rectangulosSeTocan(a, b) {
-      return (
-        a.x < b.x + b.w &&
-        a.x + a.w > b.x &&
-        a.y < b.y + b.h &&
-        a.y + a.h > b.y
-      );
-    }
-
-    function actualizar(dt) {
-      if (victoria || finDelJuego) return;
-
-      const antesX = jugador.x;
-      const antesY = jugador.y;
-
-      // Movimiento horizontal
-      jugador.vx = 0;
-
-      if (teclas.izquierda) jugador.vx = -jugador.velocidad;
-      if (teclas.derecha) jugador.vx = jugador.velocidad;
-
-      jugador.x += jugador.vx * dt;
-      jugador.x = Math.max(0, Math.min(ANCHO_MUNDO - jugador.w, jugador.x));
-
-      // Evita que el personaje atraviese los lados de las plataformas.
-      for (const plataforma of plataformas) {
-        if (!rectangulosSeTocan(jugador, plataforma)) continue;
-
-        const habiaSolapamientoVertical =
-          antesY + jugador.h > plataforma.y &&
-          antesY < plataforma.y + plataforma.h;
-
-        if (habiaSolapamientoVertical) {
-          if (jugador.vx > 0) {
-            jugador.x = plataforma.x - jugador.w;
-          } else if (jugador.vx < 0) {
-            jugador.x = plataforma.x + plataforma.w;
-          }
-        }
-      }
-
-      // Salto y gravedad
-      if (saltoSolicitado && jugador.enSuelo) {
-        jugador.vy = -jugador.fuerzaSalto;
-        jugador.enSuelo = false;
-      }
-
-      saltoSolicitado = false;
-
-      jugador.vy += 1900 * dt;
-      jugador.y += jugador.vy * dt;
-      jugador.enSuelo = false;
-
-      // Colisiones verticales con el suelo y las plataformas
-      for (const plataforma of plataformas) {
-        if (!rectangulosSeTocan(jugador, plataforma)) continue;
-
-        const antesAbajo = antesY + jugador.h;
-        const antesArriba = antesY;
-
-        if (jugador.vy >= 0 && antesAbajo <= plataforma.y + 2) {
-          jugador.y = plataforma.y - jugador.h;
-          jugador.vy = 0;
-          jugador.enSuelo = true;
-        } else if (
-          jugador.vy < 0 &&
-          antesArriba >= plataforma.y + plataforma.h - 2
-        ) {
-          jugador.y = plataforma.y + plataforma.h;
-          jugador.vy = 0;
-        }
-      }
-
-      // Recoger monedas
-      for (const moneda of monedas) {
-        if (moneda.recogida) continue;
-
-        const cajaMoneda = {
-          x: moneda.x - 11,
-          y: moneda.y - 11,
-          w: 22,
-          h: 22
-        };
-
-        if (rectangulosSeTocan(jugador, cajaMoneda)) {
-          moneda.recogida = true;
-          jugador.monedas++;
-        }
-      }
-
-      // Movimiento y choque con el enemigo
-      if (enemigo.vivo) {
-        enemigo.x += enemigo.velocidad * enemigo.direccion * dt;
-
-        if (enemigo.x < enemigo.limiteIzquierdo) {
-          enemigo.x = enemigo.limiteIzquierdo;
-          enemigo.direccion = 1;
-        }
-
-        if (enemigo.x + enemigo.w > enemigo.limiteDerecho) {
-          enemigo.x = enemigo.limiteDerecho - enemigo.w;
-          enemigo.direccion = -1;
-        }
-
-        if (rectangulosSeTocan(jugador, enemigo)) {
-          const veniaCayendo =
-            jugador.vy > 0 &&
-            antesY + jugador.h <= enemigo.y + 12;
-
-          if (veniaCayendo) {
-            enemigo.vivo = false;
-            jugador.vy = -390;
-            jugador.enSuelo = false;
-          } else {
-            jugador.vidas--;
-
-            if (jugador.vidas <= 0) {
-              finDelJuego = true;
-            } else {
-              // Al recibir daño, el jugador vuelve al inicio.
-              jugador.x = 70;
-              jugador.y = SUELO_Y - jugador.h;
-              jugador.vx = 0;
-              jugador.vy = 0;
+            if (!userNickname || !url) {
+                alert("Por favor, rellena todos los campos.");
+                return;
             }
-          }
+
+            // Asegurar el protocolo https
+            if (!/^https?:\/\//i.test(url)) { url = 'https://' + url; }
+
+            document.getElementById('nav-url-input').value = url;
+            document.getElementById('login-screen').style.opacity = '0';
+            setTimeout(() => document.getElementById('login-screen').style.display = 'none', 300);
+            
+            document.getElementById('toggle-nav-btn').style.display = 'flex';
+            document.getElementById('user-display').innerText = userNickname;
+            
+            document.getElementById('web-frame').src = url;
         }
-      }
 
-      // Llegar a la bandera
-      const bandera = { x: 2470, y: 320, w: 30, h: 170 };
-      if (rectangulosSeTocan(jugador, bandera)) {
-        victoria = true;
-      }
+        function changeUrlFromNav() {
+            let newUrl = document.getElementById('nav-url-input').value.trim();
+            if (!newUrl) return alert("Escribe una URL válida");
 
-      // La cámara sigue al jugador
-      camaraX = jugador.x - ANCHO * 0.38;
-      camaraX = Math.max(0, Math.min(ANCHO_MUNDO - ANCHO, camaraX));
-    }
-
-    function dibujarFondo() {
-      const cielo = ctx.createLinearGradient(0, 0, 0, ALTO);
-      cielo.addColorStop(0, "#7dd3fc");
-      cielo.addColorStop(1, "#dbeafe");
-
-      ctx.fillStyle = cielo;
-      ctx.fillRect(0, 0, ANCHO, ALTO);
-
-      // Colinas decorativas con desplazamiento parallax
-      ctx.fillStyle = "#86efac";
-      for (let i = 0; i < 7; i++) {
-        const x = i * 240 - (camaraX * 0.22 % 240);
-
-        ctx.beginPath();
-        ctx.ellipse(x + 80, 480, 150, 105, 0, Math.PI, 0);
-        ctx.fill();
-      }
-
-      // Nubes
-      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-      for (let i = 0; i < 8; i++) {
-        const x = (i * 230 - camaraX * 0.12) % (ANCHO + 180);
-
-        ctx.beginPath();
-        ctx.arc(x, 90 + (i % 3) * 34, 24, 0, Math.PI * 2);
-        ctx.arc(x + 28, 80 + (i % 3) * 34, 32, 0, Math.PI * 2);
-        ctx.arc(x + 60, 94 + (i % 3) * 34, 22, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    function dibujarPlataformas() {
-      for (const plataforma of plataformas) {
-        const x = plataforma.x - camaraX;
-
-        if (x + plataforma.w < 0 || x > ANCHO) continue;
-
-        if (plataforma.y === SUELO_Y) {
-          ctx.fillStyle = "#65a30d";
-          ctx.fillRect(x, plataforma.y, plataforma.w, plataforma.h);
-
-          ctx.fillStyle = "#a16207";
-          ctx.fillRect(x, plataforma.y + 18, plataforma.w, plataforma.h);
-
-          // Pequeñas marcas del suelo
-          ctx.fillStyle = "#854d0e";
-          for (let i = 0; i < plataforma.w; i += 48) {
-            ctx.fillRect(x + i, plataforma.y + 35, 24, 5);
-          }
-        } else {
-          ctx.fillStyle = "#92400e";
-          ctx.fillRect(x, plataforma.y, plataforma.w, plataforma.h);
-
-          ctx.fillStyle = "#facc15";
-          ctx.fillRect(x, plataforma.y, plataforma.w, 7);
-
-          ctx.fillStyle = "#b45309";
-          for (let i = 0; i < plataforma.w; i += 32) {
-            ctx.strokeStyle = "#78350f";
-            ctx.strokeRect(x + i, plataforma.y + 7, 32, 13);
-          }
+            if (!/^https?:\/\//i.test(newUrl)) { newUrl = 'https://' + newUrl; }
+            
+            document.getElementById('nav-url-input').value = newUrl;
+            document.getElementById('web-frame').src = newUrl;
+            toggleNav();
         }
-      }
-    }
 
-    function dibujarMonedas() {
-      for (const moneda of monedas) {
-        if (moneda.recogida) continue;
-
-        const x = moneda.x - camaraX;
-
-        ctx.fillStyle = "#facc15";
-        ctx.beginPath();
-        ctx.ellipse(x, moneda.y, 10, 14, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = "#f97316";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.fillStyle = "#fff7ad";
-        ctx.fillRect(x - 2, moneda.y - 7, 3, 9);
-      }
-    }
-
-    function dibujarJugador() {
-      const x = jugador.x - camaraX;
-      const y = jugador.y;
-
-      // Piernas
-      ctx.fillStyle = "#1e3a8a";
-      ctx.fillRect(x + 5, y + 33, 10, 15);
-      ctx.fillRect(x + 20, y + 33, 10, 15);
-
-      // Botas
-      ctx.fillStyle = "#713f12";
-      ctx.fillRect(x + 2, y + 43, 14, 5);
-      ctx.fillRect(x + 18, y + 43, 14, 5);
-
-      // Cuerpo
-      ctx.fillStyle = "#0f766e";
-      ctx.fillRect(x + 4, y + 20, 27, 18);
-
-      // Cabeza
-      ctx.fillStyle = "#f5c99b";
-      ctx.fillRect(x + 8, y + 5, 21, 19);
-
-      // Pelo
-      ctx.fillStyle = "#5b341c";
-      ctx.fillRect(x + 7, y + 4, 23, 6);
-
-      // Gorro verde, para darle un aspecto propio al personaje
-      ctx.fillStyle = "#16a34a";
-      ctx.fillRect(x + 6, y, 24, 7);
-      ctx.fillRect(x + 18, y + 6, 15, 4);
-
-      // Ojo
-      ctx.fillStyle = "#111827";
-      ctx.fillRect(x + 23, y + 12, 3, 3);
-    }
-
-    function dibujarEnemigo() {
-      if (!enemigo.vivo) return;
-
-      const x = enemigo.x - camaraX;
-      const y = enemigo.y;
-
-      ctx.fillStyle = "#7c3aed";
-      ctx.beginPath();
-      ctx.ellipse(x + enemigo.w / 2, y + 19, 19, 13, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "white";
-      ctx.fillRect(x + 9, y + 12, 7, 8);
-      ctx.fillRect(x + 22, y + 12, 7, 8);
-
-      ctx.fillStyle = "#111827";
-      ctx.fillRect(x + 12, y + 15, 3, 4);
-      ctx.fillRect(x + 24, y + 15, 3, 4);
-
-      ctx.fillStyle = "#4c1d95";
-      ctx.fillRect(x + 4, y + 27, 10, 5);
-      ctx.fillRect(x + 24, y + 27, 10, 5);
-    }
-
-    function dibujarBandera() {
-      const x = 2475 - camaraX;
-
-      ctx.fillStyle = "#475569";
-      ctx.fillRect(x, 320, 7, 170);
-
-      ctx.fillStyle = "#ef4444";
-      ctx.beginPath();
-      ctx.moveTo(x + 7, 325);
-      ctx.lineTo(x + 68, 345);
-      ctx.lineTo(x + 7, 365);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = "#334155";
-      ctx.fillRect(x - 8, 488, 24, 8);
-    }
-
-    function dibujarInterfaz() {
-      ctx.fillStyle = "rgba(15, 23, 42, 0.72)";
-      ctx.fillRect(16, 14, 260, 48);
-
-      ctx.fillStyle = "white";
-      ctx.font = "bold 20px system-ui";
-      ctx.fillText("Monedas: " + jugador.monedas, 30, 45);
-      ctx.fillText("Vidas: " + "♥ ".repeat(jugador.vidas), 155, 45);
-    }
-
-    function dibujarMensaje(titulo, subtitulo) {
-      ctx.fillStyle = "rgba(15, 23, 42, 0.76)";
-      ctx.fillRect(0, 0, ANCHO, ALTO);
-
-      ctx.fillStyle = "white";
-      ctx.textAlign = "center";
-      ctx.font = "bold 48px system-ui";
-      ctx.fillText(titulo, ANCHO / 2, ALTO / 2 - 15);
-
-      ctx.font = "22px system-ui";
-      ctx.fillText(subtitulo, ANCHO / 2, ALTO / 2 + 30);
-
-      ctx.textAlign = "left";
-    }
-
-    function dibujar() {
-      dibujarFondo();
-      dibujarPlataformas();
-      dibujarMonedas();
-      dibujarBandera();
-      dibujarEnemigo();
-      dibujarJugador();
-      dibujarInterfaz();
-
-      if (victoria) {
-        dibujarMensaje(
-          "¡Lo lograste!",
-          `Monedas recogidas: ${jugador.monedas} · Pulsa R para jugar otra vez`
-        );
-      } else if (finDelJuego) {
-        dibujarMensaje(
-          "Fin del juego",
-          "Pulsa R para volver a intentarlo"
-        );
-      }
-    }
-
-    function bucle(tiempo) {
-      const dt = Math.min((tiempo - ultimoTiempo) / 1000 || 0, 0.033);
-      ultimoTiempo = tiempo;
-
-      actualizar(dt);
-      dibujar();
-
-      requestAnimationFrame(bucle);
-    }
-
-    // Controles de teclado
-    window.addEventListener("keydown", (evento) => {
-      const tecla = evento.key.toLowerCase();
-
-      if (
-        tecla === "arrowleft" ||
-        tecla === "arrowright" ||
-        tecla === "arrowup" ||
-        tecla === " " ||
-        tecla === "a" ||
-        tecla === "d" ||
-        tecla === "w"
-      ) {
-        evento.preventDefault();
-      }
-
-      if (tecla === "arrowleft" || tecla === "a") {
-        teclas.izquierda = true;
-      }
-
-      if (tecla === "arrowright" || tecla === "d") {
-        teclas.derecha = true;
-      }
-
-      if (
-        tecla === "arrowup" ||
-        tecla === " " ||
-        tecla === "w"
-      ) {
-        if (!evento.repeat) saltoSolicitado = true;
-      }
-
-      if (tecla === "r") {
-        reiniciar();
-      }
-    });
-
-    window.addEventListener("keyup", (evento) => {
-      const tecla = evento.key.toLowerCase();
-
-      if (tecla === "arrowleft" || tecla === "a") {
-        teclas.izquierda = false;
-      }
-
-      if (tecla === "arrowright" || tecla === "d") {
-        teclas.derecha = false;
-      }
-    });
-
-    // Controles táctiles para móviles
-    function configurarBoton(id, alPulsar, alSoltar) {
-      const boton = document.querySelector(id);
-
-      boton.addEventListener("pointerdown", (evento) => {
-        evento.preventDefault();
-        boton.setPointerCapture(evento.pointerId);
-        alPulsar();
-      });
-
-      const soltar = (evento) => {
-        evento.preventDefault();
-        alSoltar();
-      };
-
-      boton.addEventListener("pointerup", soltar);
-      boton.addEventListener("pointercancel", soltar);
-      boton.addEventListener("lostpointercapture", soltar);
-    }
-
-    configurarBoton(
-      "#izquierda",
-      () => teclas.izquierda = true,
-      () => teclas.izquierda = false
-    );
-
-    configurarBoton(
-      "#derecha",
-      () => teclas.derecha = true,
-      () => teclas.derecha = false
-    );
-
-    configurarBoton(
-      "#saltar",
-      () => saltoSolicitado = true,
-      () => {}
-    );
-
-    reiniciar();
-    requestAnimationFrame(bucle);
-  </script>
+        function toggleNav() {
+            const nav = document.getElementById('floating-nav');
+            navVisible = !navVisible;
+            nav.classList.toggle('show', navVisible);
+        }
+    </script>
 </body>
 </html>
